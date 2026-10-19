@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SILAT-LALA · Sistem Layanan Terpadu Kecamatan Sungai Lala</title>
+  <meta name="description" content="SILAT-LALA — Sistem Layanan Terpadu Kecamatan Sungai Lala, Kabupaten Indragiri Hulu">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SILAT-LALA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preload" href="intro-poster.jpg" as="image">
+  <style>
+    :root { --hijau: #14532d; --emas: #eab308; --emas2: #f5d26b; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: #0b0f14; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; overflow: hidden; }
+
+    /* ---------- Aplikasi utama (Google Apps Script) ---------- */
+    #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; visibility: hidden; opacity: 0; transition: opacity .5s ease; }
+    #app.tampil { visibility: visible; opacity: 1; }
+
+    .layar { position: fixed; inset: 0; transition: opacity .6s ease, visibility .6s; }
+    .layar.hilang { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    /* ---------- 1. Video pembuka ---------- */
+    #intro { background: #0b0f14; z-index: 30; cursor: pointer; overflow: hidden; }
+    #intro .latar { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(28px) brightness(.45); }
+    #intro .utama { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    @media (max-aspect-ratio: 10/16) { #intro .utama { object-fit: cover; } }
+    .ajakan { position: absolute; left: 50%; bottom: calc(46px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; color: #fff; text-align: center; pointer-events: none; }
+    .ajakan .tombol { pointer-events: auto; background: linear-gradient(135deg, #b8860b, var(--emas2) 50%, #b8860b); color: #1f2937; border: 0; padding: 14px 34px; border-radius: 999px; font-size: 16px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; box-shadow: 0 0 0 0 rgba(245,210,107,.7), 0 8px 24px rgba(0,0,0,.45); animation: denyut 1.8s ease-out infinite; cursor: pointer; opacity: 0; transform: translateY(14px); transition: opacity .6s, transform .6s; }
+    .ajakan .tombol.muncul { opacity: 1; transform: none; }
+    .ajakan .petunjuk { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: .75; text-shadow: 0 1px 4px #000; animation: kedip 2.2s ease-in-out infinite; }
+    @keyframes denyut { 0% { box-shadow: 0 0 0 0 rgba(245,210,107,.65), 0 8px 24px rgba(0,0,0,.45); } 70% { box-shadow: 0 0 0 18px rgba(245,210,107,0), 0 8px 24px rgba(0,0,0,.45); } 100% { box-shadow: 0 0 0 0 rgba(245,210,107,0), 0 8px 24px rgba(0,0,0,.45); } }
+    @keyframes kedip { 0%,100% { opacity: .35; } 50% { opacity: .9; } }
+    .btn-bulat { position: absolute; top: calc(16px + env(safe-area-inset-top)); width: 42px; height: 42px; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; border: 1px solid rgba(255,255,255,.35); font-size: 18px; cursor: pointer; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
+    #suara { right: 16px; }
+
+    /* ---------- 2. Loading (sesuai video contoh) ---------- */
+    #muat { z-index: 20; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #muat video { width: min(62vw, 320px); height: auto; mix-blend-mode: multiply; }
+    #muat .teks { margin-top: 6px; color: var(--hijau); font-weight: 800; letter-spacing: 3px; font-size: 18px; }
+    #muat .sub { margin-top: 4px; color: #4b5563; font-size: 12px; }
+    .titik span { display: inline-block; width: 7px; height: 7px; margin: 14px 3px 0; border-radius: 50%; background: var(--emas); animation: lompat 1.2s infinite ease-in-out; }
+    .titik span:nth-child(2) { animation-delay: .15s; } .titik span:nth-child(3) { animation-delay: .3s; }
+    @keyframes lompat { 0%,80%,100% { transform: scale(.5); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
+    #pesan-lambat { margin-top: 16px; font-size: 12px; color: #4b5563; text-align: center; opacity: 0; transition: opacity .4s; }
+    #pesan-lambat.ada { opacity: 1; }
+    #pesan-lambat button { margin-top: 8px; background: var(--hijau); color: #fff; border: 0; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+    /* ---------- 3. Offline ---------- */
+    #offline { z-index: 40; background: var(--hijau); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+    #offline button { margin-top: 16px; background: var(--emas); border: 0; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+
+    /* ---------- Tombol pasang aplikasi ---------- */
+    #pasang { position: fixed; left: 50%; transform: translateX(-50%); top: calc(14px + env(safe-area-inset-top)); z-index: 35; display: none; align-items: center; gap: 8px; background: rgba(20,83,45,.92); color: #fff; border: 1.5px solid var(--emas); padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.35); cursor: pointer; white-space: nowrap; }
+    #pasang .x { opacity: .7; font-weight: 400; padding-left: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- 1. VIDEO PEMBUKA: diputar saat aplikasi dibuka, diketuk untuk masuk ke login -->
+  <div id="intro" class="layar" role="button" aria-label="Ketuk untuk masuk">
+    <video class="latar" id="vid-latar" src="intro.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="utama" id="vid" src="intro.mp4" poster="intro-poster.jpg" muted playsinline preload="auto"></video>
+    <button class="btn-bulat" id="suara" title="Nyalakan / matikan suara" aria-label="Suara">🔇</button>
+    <div class="ajakan">
+      <button class="tombol" id="masuk">MASUK APLIKASI</button>
+      <div class="petunjuk" id="petunjuk">Ketuk layar untuk masuk</div>
+    </div>
+  </div>
+
+  <!-- 2. LOADING -->
+  <div id="muat" class="layar hilang">
+    <video id="vid-muat" src="loading.mp4" muted playsinline loop preload="auto" poster="logo-kecamatan-cincin.png"></video>
+    <div class="teks">SILAT-LALA</div>
+    <div class="sub">Sistem Layanan Terpadu Kecamatan Sungai Lala</div>
+    <div class="titik"><span></span><span></span><span></span></div>
+    <div id="pesan-lambat">Koneksi agak lambat, mohon tunggu…<br><button onclick="muatUlang()">Muat Ulang</button></div>
+  </div>
+
+  <!-- 3. TIDAK ADA INTERNET -->
+  <div id="offline" class="layar hilang">
+    <div style="font-size:48px">📡</div>
+    <h2>Tidak ada koneksi internet</h2>
+    <p>SILAT-LALA membutuhkan internet untuk mengakses data.<br>Periksa koneksi Anda lalu coba lagi.</p>
+    <button onclick="muatUlang()">Coba Lagi</button>
+  </div>
+
+  <!-- 4. APLIKASI SILAT-LALA (Google Apps Script) -->
+  <iframe id="app" title="SILAT-LALA" allow="clipboard-write; camera; fullscreen"></iframe>
+
+  <button id="pasang"><span>📲 Pasang Aplikasi</span><span class="x" id="pasang-tutup">✕</span></button>
+
+  <script>
+    // ======================= PENGATURAN =======================
+    // 1) Tempel link /exec aplikasi SILAT-LALA
+    //    (Apps Script > Terapkan/Deploy > Kelola deployment > URL Aplikasi web)
+    const URL_APLIKASI = 'https://script.google.com/macros/s/AKfycbwmvuPZF_i-ge0HZqs9u3lkiM9RqPktAxY6kRNcgejzpOlbUMBgCFEixP7gtMGcNqw/exec';
+    // 2) Lama minimal tampilan loading (detik) agar animasinya terlihat
+    const MIN_LOADING = 2.5;
+    // ==========================================================
+
+    const $ = id => document.getElementById(id);
+    const intro = $('intro'), vid = $('vid'), vidLatar = $('vid-latar'), muat = $('muat'), app = $('app');
+    let sudahMasuk = false, appSiap = false, mulaiMuat = 0;
+
+    // ---------- Video pembuka ----------
+    function putarIntro() {
+      const p = vid.play(); if (p && p.catch) p.catch(() => tampilTombol());
+      vidLatar.play().catch(() => {});
+      setTimeout(tampilTombol, 2500);              // tombol muncul setelah 2,5 detik
+    }
+    function tampilTombol() { $('masuk').classList.add('muncul'); }
+    vid.addEventListener('ended', () => {         // video selesai: berhenti di logo akhir
+      tampilTombol();
+      $('petunjuk').textContent = 'Ketuk tombol atau layar untuk masuk';
+      try { vidLatar.pause(); } catch (e) {}
+    });
+    vid.addEventListener('error', () => { intro.style.background = '#0b0f14 url(intro-poster.jpg) center/contain no-repeat'; tampilTombol(); });
+    $('suara').addEventListener('click', ev => {
+      ev.stopPropagation();
+      vid.muted = !vid.muted; $('suara').textContent = vid.muted ? '🔇' : '🔊';
+      if (vid.paused && !vid.ended) vid.play().catch(() => {});
+    });
+    intro.addEventListener('click', masuk);
+    $('masuk').addEventListener('click', ev => { ev.stopPropagation(); masuk(); });
+    document.addEventListener('keydown', ev => { if (!sudahMasuk && (ev.key === 'Enter' || ev.key === ' ')) masuk(); });
+
+    // ---------- Ketuk -> loading -> login ----------
+    function masuk() {
+      if (sudahMasuk) return;
+      sudahMasuk = true;
+      try { vid.pause(); vidLatar.pause(); } catch (e) {}
+      muat.classList.remove('hilang');
+      intro.classList.add('hilang');
+      const v = $('vid-muat'); v.currentTime = 0; v.play().catch(() => {});
+      mulaiMuat = Date.now();
+      if (!navigator.onLine) { $('offline').classList.remove('hilang'); return; }
+      if (!app.src) muatAplikasi();
+      cobaTampilkan();
+      setTimeout(() => { if (!appSiap) $('pesan-lambat').classList.add('ada'); }, 15000);
+    }
+    function muatAplikasi() {
+      if (URL_APLIKASI.indexOf('https://') !== 0) {
+        alert('Link aplikasi belum diisi.\nBuka index.html lalu isi URL_APLIKASI dengan link /exec dari Apps Script.');
+        return;
+      }
+      app.addEventListener('load', () => { appSiap = true; cobaTampilkan(); }, { once: true });
+      app.src = URL_APLIKASI;
+    }
+    function cobaTampilkan() {
+      if (!sudahMasuk || !appSiap) return;
+      const sisa = Math.max(0, MIN_LOADING * 1000 - (Date.now() - mulaiMuat));
+      setTimeout(() => {
+        app.classList.add('tampil');
+        muat.classList.add('hilang');
+        setTimeout(() => { try { $('vid-muat').pause(); } catch (e) {} }, 700);
+      }, sisa + 300);
+    }
+    function muatUlang() { location.reload(); }
+
+    // Aplikasi mulai dimuat di belakang selama video pembuka diputar (agar cepat)
+    if (navigator.onLine) muatAplikasi();
+    window.addEventListener('online', () => { if (sudahMasuk && !appSiap) muatUlang(); });
+    window.addEventListener('offline', () => { if (sudahMasuk && !appSiap) $('offline').classList.remove('hilang'); });
+    putarIntro();
+
+    // ---------- Service worker (agar bisa dipasang di HP / PC) ----------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+    }
+
+    // ---------- Tombol "Pasang Aplikasi" ----------
+    let promptPasang = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault(); promptPasang = e;
+      try { if (localStorage.getItem('silat_tolak_pasang') === '1') return; } catch (er) {}
+      $('pasang').style.display = 'flex';
+    });
+    $('pasang').addEventListener('click', async ev => {
+      ev.stopPropagation();
+      if (ev.target.id === 'pasang-tutup') {
+        $('pasang').style.display = 'none';
+        try { localStorage.setItem('silat_tolak_pasang', '1'); } catch (er) {}
+        return;
+      }
+      if (!promptPasang) return;
+      promptPasang.prompt();
+      await promptPasang.userChoice;
+      promptPasang = null; $('pasang').style.display = 'none';
+    });
+    window.addEventListener('appinstalled', () => { $('pasang').style.display = 'none'; });
+  </script>
+</body>
+</html>
