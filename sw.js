@@ -1,6 +1,6 @@
 // SILAT-DeLa service worker: menyimpan tampilan & pustaka agar aplikasi bisa dibuka tanpa sinyal.
 // Naikkan nomor versi setiap kali file di GitHub diganti.
-const VERSI = 'silat-dela-v1';
+const VERSI = 'silat-dela-v2';
 const INTI = [
   './', './index.html', './app.html', './offline.js', './manifest.webmanifest',
   './favicon.ico', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
