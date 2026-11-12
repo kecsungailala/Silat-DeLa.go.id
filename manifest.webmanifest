@@ -1,7 +1,7 @@
 {
-  "name": "SILAT-LALA · Sistem Layanan Terpadu Kecamatan Sungai Lala",
-  "short_name": "SILAT-LALA",
-  "description": "Sistem Layanan Terpadu Kecamatan Sungai Lala, Kabupaten Indragiri Hulu",
+  "name": "SILAT-DeLa · Sistem Layanan Terpadu Desa Se-Kecamatan Sungai Lala",
+  "short_name": "SILAT-DeLa",
+  "description": "Sistem Layanan Terpadu Desa Se-Kecamatan Sungai Lala, Kabupaten Indragiri Hulu",
   "id": "./",
   "start_url": "./",
   "scope": "./",

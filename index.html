@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SILAT-LALA · Sistem Layanan Terpadu Kecamatan Sungai Lala</title>
-  <meta name="description" content="SILAT-LALA — Sistem Layanan Terpadu Kecamatan Sungai Lala, Kabupaten Indragiri Hulu">
+  <title>SILAT-DeLa · Sistem Layanan Terpadu Desa Se-Kecamatan Sungai Lala</title>
+  <link rel="prefetch" href="app.html">
+  <meta name="description" content="SILAT-DeLa — Sistem Layanan Terpadu Desa Se-Kecamatan Sungai Lala, Kabupaten Indragiri Hulu">
   <meta name="theme-color" content="#0b0f14">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="SILAT-LALA">
+  <meta name="apple-mobile-web-app-title" content="SILAT-DeLa">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="preload" href="intro-poster.jpg" as="image">
@@ -54,8 +55,6 @@
     #pesan-lambat button { margin-top: 8px; background: var(--hijau); color: #fff; border: 0; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
     /* ---------- 3. Offline ---------- */
-    #offline { z-index: 40; background: var(--hijau); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
-    #offline button { margin-top: 16px; background: var(--emas); border: 0; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 
     /* ---------- Tombol pasang aplikasi ---------- */
     #pasang { position: fixed; left: 50%; transform: translateX(-50%); top: calc(14px + env(safe-area-inset-top)); z-index: 35; display: none; align-items: center; gap: 8px; background: rgba(20,83,45,.92); color: #fff; border: 1.5px solid var(--emas); padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.35); cursor: pointer; white-space: nowrap; }
@@ -78,40 +77,28 @@
   <!-- 2. LOADING -->
   <div id="muat" class="layar hilang">
     <video id="vid-muat" src="loading.mp4" muted playsinline loop preload="auto" poster="logo-kecamatan-cincin.png"></video>
-    <div class="teks">SILAT-LALA</div>
-    <div class="sub">Sistem Layanan Terpadu Kecamatan Sungai Lala</div>
+    <div class="teks">SILAT-DeLa</div>
+    <div class="sub">Sistem Layanan Terpadu Desa Se-Kecamatan Sungai Lala</div>
     <div class="titik"><span></span><span></span><span></span></div>
     <div id="pesan-lambat">Koneksi agak lambat, mohon tunggu…<br><button onclick="muatUlang()">Muat Ulang</button></div>
   </div>
-
-  <!-- 3. TIDAK ADA INTERNET -->
-  <div id="offline" class="layar hilang">
-    <div style="font-size:48px">📡</div>
-    <h2>Tidak ada koneksi internet</h2>
-    <p>SILAT-LALA membutuhkan internet untuk mengakses data.<br>Periksa koneksi Anda lalu coba lagi.</p>
-    <button onclick="muatUlang()">Coba Lagi</button>
-  </div>
-
-  <!-- 4. APLIKASI SILAT-LALA (Google Apps Script) -->
-  <iframe id="app" title="SILAT-LALA" allow="clipboard-write; camera; fullscreen"></iframe>
 
   <button id="pasang"><span>📲 Pasang Aplikasi</span><span class="x" id="pasang-tutup">✕</span></button>
 
   <script>
     // ======================= PENGATURAN =======================
-    // 1) Tempel link /exec aplikasi SILAT-LALA
-    //    (Apps Script > Terapkan/Deploy > Kelola deployment > URL Aplikasi web)
-    const URL_APLIKASI = 'https://script.google.com/macros/s/AKfycbwmvuPZF_i-ge0HZqs9u3lkiM9RqPktAxY6kRNcgejzpOlbUMBgCFEixP7gtMGcNqw/exec';
-    // 2) Lama minimal tampilan loading (detik) agar animasinya terlihat
+    // Lama minimal tampilan loading (detik) agar animasinya terlihat
     const MIN_LOADING = 2.5;
+    // Link /exec aplikasi diisi di file offline.js (bukan di sini)
     // ==========================================================
 
     const $ = id => document.getElementById(id);
-    const intro = $('intro'), vid = $('vid'), vidLatar = $('vid-latar'), muat = $('muat'), app = $('app');
-    let sudahMasuk = false, appSiap = false, mulaiMuat = 0;
+    const intro = $('intro'), vid = $('vid'), vidLatar = $('vid-latar'), muat = $('muat');
+    let sudahMasuk = false;
 
     // ---------- Video pembuka ----------
     function putarIntro() {
+      if (!navigator.onLine) { vid.removeAttribute('src'); intro.style.background = '#0b0f14 url(intro-poster.jpg) center/contain no-repeat'; tampilTombol(); return; }
       const p = vid.play(); if (p && p.catch) p.catch(() => tampilTombol());
       vidLatar.play().catch(() => {});
       setTimeout(tampilTombol, 2500);              // tombol muncul setelah 2,5 detik
@@ -132,7 +119,7 @@
     $('masuk').addEventListener('click', ev => { ev.stopPropagation(); masuk(); });
     document.addEventListener('keydown', ev => { if (!sudahMasuk && (ev.key === 'Enter' || ev.key === ' ')) masuk(); });
 
-    // ---------- Ketuk -> loading -> login ----------
+    // ---------- Ketuk -> loading -> halaman login (app.html, bisa dibuka tanpa sinyal) ----------
     function masuk() {
       if (sudahMasuk) return;
       sudahMasuk = true;
@@ -140,35 +127,10 @@
       muat.classList.remove('hilang');
       intro.classList.add('hilang');
       const v = $('vid-muat'); v.currentTime = 0; v.play().catch(() => {});
-      mulaiMuat = Date.now();
-      if (!navigator.onLine) { $('offline').classList.remove('hilang'); return; }
-      if (!app.src) muatAplikasi();
-      cobaTampilkan();
-      setTimeout(() => { if (!appSiap) $('pesan-lambat').classList.add('ada'); }, 15000);
+      setTimeout(() => location.href = 'app.html', MIN_LOADING * 1000);
+      setTimeout(() => $('pesan-lambat').classList.add('ada'), 15000);
     }
-    function muatAplikasi() {
-      if (URL_APLIKASI.indexOf('https://') !== 0) {
-        alert('Link aplikasi belum diisi.\nBuka index.html lalu isi URL_APLIKASI dengan link /exec dari Apps Script.');
-        return;
-      }
-      app.addEventListener('load', () => { appSiap = true; cobaTampilkan(); }, { once: true });
-      app.src = URL_APLIKASI;
-    }
-    function cobaTampilkan() {
-      if (!sudahMasuk || !appSiap) return;
-      const sisa = Math.max(0, MIN_LOADING * 1000 - (Date.now() - mulaiMuat));
-      setTimeout(() => {
-        app.classList.add('tampil');
-        muat.classList.add('hilang');
-        setTimeout(() => { try { $('vid-muat').pause(); } catch (e) {} }, 700);
-      }, sisa + 300);
-    }
-    function muatUlang() { location.reload(); }
-
-    // Aplikasi mulai dimuat di belakang selama video pembuka diputar (agar cepat)
-    if (navigator.onLine) muatAplikasi();
-    window.addEventListener('online', () => { if (sudahMasuk && !appSiap) muatUlang(); });
-    window.addEventListener('offline', () => { if (sudahMasuk && !appSiap) $('offline').classList.remove('hilang'); });
+    function muatUlang() { location.href = 'app.html'; }
     putarIntro();
 
     // ---------- Service worker (agar bisa dipasang di HP / PC) ----------
