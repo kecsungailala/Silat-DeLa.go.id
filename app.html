@@ -107,7 +107,7 @@
             <div class="p-4 bg-green-950/80 space-y-2">
                 <button onclick="gantiPassword()" class="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs bg-white/10 hover:bg-white/20 rounded-lg font-medium"><i class="fas fa-key"></i> Ganti Password</button>
                 <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-600/90 hover:bg-red-700 rounded-lg shadow-md font-medium"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                <div class="text-center text-[10px] text-green-200/70">Versi 12.11.2026.vx.2</div>
+                <div class="text-center text-[10px] text-green-200/70">Versi 12.11.2026.vx.3</div>
             </div>
         </aside>
 
@@ -276,7 +276,8 @@
             { sec: 'Kecamatan', bag: 'KEC', items: [
                 { id: 'rekap', l: 'Rekap Kinerja Desa', ic: 'fa-ranking-star' },
                 { id: 'riwayat', l: 'Riwayat Aktivitas', ic: 'fa-clock-rotate-left' },
-                { id: 'pengaturan', l: 'Pengaturan User', ic: 'fa-cog' } ] }
+                { id: 'pengaturan', l: 'Pengaturan User', ic: 'fa-cog' },
+                { id: 'tampilan', l: 'Pengaturan Tampilan', ic: 'fa-palette' } ] }
         ];
 
         let cUser = {}, KONF = { desa: [], arsip: {} }, halAktif = 'dashboard';
@@ -518,6 +519,7 @@
             else if(id === 'rekap') halRekap();
             else if(id === 'riwayat') halRiwayat();
             else if(id === 'pengaturan') halUser();
+            else if(id === 'tampilan') halTampilan();
         }
 
         function hapusTombol(sheet, idx) {
@@ -1124,6 +1126,66 @@
             const q = gid('cari-log').value.toLowerCase(), f = gid('fl-log').value.toLowerCase(); let c = 0;
             document.querySelectorAll('#tb-log tr').forEach(r => { const t = r.innerText.toLowerCase(); const m = t.includes(q) && (!f || t.includes(f)); r.style.display = m ? '' : 'none'; if(m) c++; });
             gid('tot-log').innerText = 'Menampilkan ' + c + ' aktivitas';
+        }
+
+        const LATAR_BAWAAN = HTTPS + 'i.ibb.co.com/xtV3KsM9/Gemini-Generated-Image-iwy39ciwy39ciwy3.png';
+        let latarAktif = '', latarBaru = '';
+        const urlLatar = u => u ? (u.indexOf('lh3.googleusercontent.com') > -1 ? u + '=w1920' : u) : LATAR_BAWAAN;
+        function terapkanLatar(u) {
+            latarAktif = u || '';
+            document.body.style.backgroundImage = 'url("' + urlLatar(latarAktif) + '")';
+            try { localStorage.setItem('silat_latar', latarAktif); } catch(e) {}
+        }
+        function muatLatar() {
+            try { const s = localStorage.getItem('silat_latar'); if(s) terapkanLatar(s); } catch(e) {}
+            if(typeof google === 'undefined') return;
+            google.script.run.withSuccessHandler(r => { if(r) terapkanLatar(r.url); }).withFailureHandler(() => {}).getLatar();
+        }
+        window.addEventListener('load', muatLatar);
+
+        function halTampilan() {
+            latarBaru = '';
+            const kotak = (id, u, teks) => '<div id="' + id + '" class="w-full aspect-video rounded-xl border-4 border-white shadow-lg bg-gray-200 bg-cover bg-center flex items-end" style="background-image:url(&quot;' + esc(u) + '&quot;)"><span class="m-2 text-[11px] font-bold bg-black/60 text-white px-2 py-1 rounded">' + teks + '</span></div>';
+            gid('halaman').innerHTML = '<div class="kartu fade-in">' + kepalaHalaman('Pengaturan Tampilan', '')
+                + '<p class="text-sm text-gray-600 mb-5">Ganti gambar latar belakang aplikasi. Latar baru langsung berlaku untuk <b>semua pengguna</b> (halaman login dan semua menu).</p>'
+                + '<div class="grid md:grid-cols-2 gap-6">'
+                + '<div><div class="lbl mb-2">Latar yang dipakai sekarang</div>' + kotak('lt-kini', urlLatar(latarAktif), latarAktif ? 'Latar pilihan Admin' : 'Latar bawaan') + '</div>'
+                + '<div><div class="lbl mb-2">Latar baru</div><div id="lt-baru-wadah">' + kotak('lt-baru', '', 'Belum dipilih') + '</div>'
+                + '<div class="bg-sky-50 p-3 rounded border mt-3"><label class="lbl">Pilih gambar <span class="font-normal text-green-800">(JPG / PNG, otomatis dikecilkan)</span></label>'
+                + '<input type="file" id="lt-file" accept=".jpg,.jpeg,.png" class="w-full text-xs" onchange="pilihLatar(this)">'
+                + '<div class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2">Saran: foto mendatar (landscape), minimal 1600 × 900 piksel, tidak terlalu ramai agar tulisan tetap mudah dibaca.</div></div>'
+                + '<div class="flex flex-wrap gap-2 mt-4"><button onclick="simpanLatarBaru()" class="btn bg-green-600 text-white"><i class="fas fa-save"></i> Simpan Latar</button>'
+                + '<button onclick="kembalikanLatar()" class="btn bg-gray-200 text-gray-800"><i class="fas fa-rotate-left"></i> Kembalikan Latar Bawaan</button></div></div>'
+                + '</div></div>';
+        }
+        async function pilihLatar(inp) {
+            const f = inp.files[0]; if(!f) return;
+            if(!/\.(jpe?g|png)$/i.test(f.name)) { inp.value = ''; return Swal.fire('Format Salah', 'Pilih gambar JPG atau PNG.', 'warning'); }
+            sLd(true, 'Menyiapkan gambar...');
+            try {
+                latarBaru = await kompresGambar(f, Math.floor(2.5 * 1048576), 1920);
+                gid('lt-baru').style.backgroundImage = 'url("' + latarBaru + '")';
+                gid('lt-baru').querySelector('span').innerText = 'Pratinjau latar baru';
+            } catch(e) { Swal.fire('Gagal', 'Gambar tidak bisa dibaca.', 'error'); }
+            sLd(false);
+        }
+        function simpanLatarBaru() {
+            if(!latarBaru) return Swal.fire('Belum Ada Gambar', 'Pilih gambar latar baru terlebih dahulu.', 'warning');
+            sLd(true, 'Mengunggah latar baru...');
+            api('simpanLatar', latarBaru).then(r => {
+                sLd(false);
+                if(r.status !== 'sukses') return Swal.fire('Gagal', r.error, 'error');
+                terapkanLatar(r.url);
+                Swal.fire({ icon: 'success', title: 'Latar diganti', text: 'Pengguna lain melihat latar baru saat membuka aplikasi.', timer: 2200, showConfirmButton: false });
+                halTampilan();
+            });
+        }
+        function kembalikanLatar() {
+            Swal.fire({ title: 'Kembalikan latar bawaan?', icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, kembalikan', cancelButtonText: 'Batal', confirmButtonColor: '#15803d' }).then(x => {
+                if(!x.isConfirmed) return;
+                sLd(true);
+                api('resetLatar').then(r => { sLd(false); if(r.status !== 'sukses') return Swal.fire('Gagal', r.error, 'error'); terapkanLatar(''); halTampilan(); });
+            });
         }
 
         function halUser() {

@@ -14,7 +14,7 @@
 
   const BACA = new Set(['getKonfig', 'getDashboardData', 'getDataSheet', 'getArsipData', 'getLayananData', 'getNotifikasi', 'getRekapKinerja', 'getRiwayat', 'getUsers', 'getCetakData']);
   const TULIS = new Set(['simpanData', 'simpanArsip', 'simpanLayananData', 'tandaiDibaca', 'simpanFotoSaya']);
-  const ONLINE_SAJA = new Set(['gantiPasswordAwal', 'gantiPasswordSaya', 'hapusDataRow', 'hapusUser', 'resetPasswordUser', 'simpanUser', 'getLampiran', 'getLampiranArsip']);
+  const ONLINE_SAJA = new Set(['gantiPasswordAwal', 'gantiPasswordSaya', 'hapusDataRow', 'hapusUser', 'resetPasswordUser', 'simpanUser', 'getLampiran', 'getLampiranArsip', 'simpanLatar', 'resetLatar']);
 
   // ---------------------------------------------------------------- penyimpanan (IndexedDB)
   let dbP = null;
@@ -297,6 +297,7 @@
     if (offline && Date.now() < lewatiJaringanSampai) throw new Error('Fitur ini membutuhkan koneksi internet. Coba lagi saat ada sinyal.');
     try {
       const r = await panggilServer(fn, a, null, null, 120000);
+      if ((fn === 'simpanLatar' || fn === 'resetLatar') && r && r.status === 'sukses') await kvSet('latar', { url: r.url || '' });
       if ((fn === 'gantiPasswordAwal' || fn === 'gantiPasswordSaya') && r && r.status === 'sukses') {
         const au = await authDari(aktif), baru = fn === 'gantiPasswordAwal' ? a[0] : a[1];
         if (au) { const h = await hashPw(String(baru).trim()); au.salt = h.salt; au.hash = h.hash; delete au.profil.wajibGanti; await kvSet(kunciAuth(au.username), au); }
@@ -308,6 +309,10 @@
   // ---------------------------------------------------------------- pengganti google.script.run
   async function jalankan(fn, args) {
     if (fn === 'loginUser') return masuk(args[0], args[1]);
+    if (fn === 'getLatar') {   // latar belakang: tidak perlu login, disimpan di perangkat agar tampil saat offline
+      try { const j = await kirimApi({ aksi: 'latar' }, 15000); const r = (j && j.hasil) || { url: '' }; await kvSet('latar', r); return r; }
+      catch (e) { return (await kvGet('latar')) || { url: '' }; }
+    }
     if (fn === 'logoutUser') {
       const sisa = (await qAll()).filter(x => x.user === aktif && x.status !== 'ditolak' && x.fn !== 'tandaiDibaca').length;
       if (sisa) setTimeout(() => toast(sisa + ' data masih menunggu dikirim. Data aman di perangkat dan akan terkirim saat aplikasi dibuka dan ada sinyal.', 'warning', 6000), 600);
